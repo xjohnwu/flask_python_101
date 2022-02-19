@@ -34,15 +34,18 @@ class TradingUniverseAPI(MethodResource, Resource):
 
 
 def register_doc(docs: FlaskApiSpec):
+    # 1. Create Blueprint
     blueprint_data = Blueprint(name='data', import_name='data', url_prefix='/api/v1/data')
-
+    # 2. Wrap it with Api
     blueprint_data_api = Api(blueprint_data)
 
+    # 3. Add resource
     data_service = DataService(['BTCUSDT', 'ETHUSDT', 'LTCUSDT', 'DYDXUSDT'])
     blueprint_data_api.add_resource(TradingUniverseAPI, '/universe',
                                     resource_class_kwargs={'data_service': data_service})
-
+    # 4. Only register blueprint in app after adding all resources
     docs.app.register_blueprint(blueprint_data)
 
+    # 5. Register swagger in the final step
     docs.register(TradingUniverseAPI, blueprint=blueprint_data.name,
                   resource_class_kwargs={'data_service': data_service})
