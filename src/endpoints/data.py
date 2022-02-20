@@ -5,6 +5,7 @@ from flask_apispec.views import MethodResource
 from flask_apispec.extension import FlaskApiSpec
 from marshmallow import Schema, fields
 
+from src.utils.blueprintregisterhelper import BlueprintRegisterHelper
 from src.utils.dataservice import DataService
 
 
@@ -20,20 +21,20 @@ class TradingUniverseAPI(MethodResource, Resource):
     def __init__(self, data_service: DataService):
         self.data_service = data_service
 
-    @doc(description='Symbols.', tags=['Binance'])
+    @doc(description='Symbols.', tags=['Data'])
     @use_kwargs(TradingUniverseRequestSchema, location='query')
     @marshal_with(TradingUniverseResponseSchema)  # marshalling
     def get(self, **kwargs):
         return {"trading_universe": self.data_service.get_symbols()[:kwargs['first_n']]}
 
-    @doc(description='Filter first N symbols.', tags=['Binance'])
+    @doc(description='Filter first N symbols.', tags=['Data'])
     @use_kwargs(TradingUniverseRequestSchema, location='json')
     @marshal_with(TradingUniverseResponseSchema)  # marshalling
     def post(self, **kwargs):
         return {"trading_universe": self.data_service.get_symbols()[:kwargs['first_n']]}
 
 
-def register_doc(docs: FlaskApiSpec):
+def register_doc_old(docs: FlaskApiSpec):
     # 1. Create Blueprint
     blueprint_data = Blueprint(name='data', import_name='data', url_prefix='/api/v1/data')
     # 2. Wrap it with Api
@@ -49,3 +50,13 @@ def register_doc(docs: FlaskApiSpec):
     # 5. Register swagger in the final step
     docs.register(TradingUniverseAPI, blueprint=blueprint_data.name,
                   resource_class_kwargs={'data_service': data_service})
+
+
+def register_doc(docs: FlaskApiSpec):
+    helper = BlueprintRegisterHelper(name='data', url_prefix='/api/v1/data')
+    data_service = DataService(['BTCUSDT', 'ETHUSDT', 'LTCUSDT', 'DYDXUSDT'])
+    helper.add_resource('/universe', TradingUniverseAPI, data_service=data_service)
+    # helper.add_resource('/kline', KlineAPI)
+
+    # Register swagger in the final step
+    helper.register_doc(docs)
